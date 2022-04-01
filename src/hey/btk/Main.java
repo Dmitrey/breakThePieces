@@ -44,7 +44,7 @@ public class Main {
             matrix[i] = init[i].split("");
         }
 
-        int[] start = {0,3};
+        int[] start = {0, 3};
 
         while (true) {
             step(start);
@@ -52,23 +52,34 @@ public class Main {
     }
 
 
-
-    static void step(int[] start){
+    static void step(int[] start) {
         int[] point = start;
-        point = currentDirection.apply(point);
+        point = DirectionHolder.currentDirection.apply(point);
     }
 
-    static boolean checkRight(int[]){
-
-    }
-
-    static void changeDirection(){
+    static boolean checkRight(int[]) {
 
     }
 
-    static Function<int[],int[]> goRight = (int[] arr)-> new int[]{arr[0],arr[1]+1};
-    static Function<int[],int[]> goDown = (int[] arr)-> new int[]{arr[0]+1,arr[1]};
-    static Function<int[],int[]> goLeft = (int[] arr)-> new int[]{arr[0],arr[1]-1};
-    static Function<int[],int[]> goUp = (int[] arr)-> new int[]{arr[0]-1,arr[1]};
-    static Function<int[],int[]> currentDirection = goRight;
+    static void changeDirection() {
+
+    }
+
+
+    static class DirectionHolder {
+        static int index = 0;
+        static List<Function<int[], int[]>> list = List.of(
+                (int[] arr) -> new int[]{arr[0], arr[1] + 1},
+                (int[] arr) -> new int[]{arr[0] + 1, arr[1]},
+                (int[] arr) -> new int[]{arr[0], arr[1] - 1},
+                (int[] arr) -> new int[]{arr[0] - 1, arr[1]}
+        );
+        Function<int[], int[]> currentDirection = list.get(index);
+
+        static void turnRight() {
+            index = index < 4 ? index + 1 : 0;
+        }
+
+        static void stepForward(){}
+    }
 }
