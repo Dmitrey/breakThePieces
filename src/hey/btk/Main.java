@@ -1,40 +1,49 @@
 package hey.btk;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 public class Main {
 
     public static void main(String[] args) {
-        String shape = String.join("\n", new String[]
-                {       "+--------+",
-                        "|        |",
-                        "|        |",
-                        "|        |",
-                        "+--+-----+",
-                        "|  |     |",
-                        "|  |     |",
-                        "+--+-----+"});
+        String shape = String.join("\n", new String[] {
+                "         +------------+--+      +--+",
+                "         |            |  |      |  |",
+                "         | +-------+  |  |      |  |",
+                "         | |       |  |  +------+  |",
+                "         | |       |  |            |",
+                "         | |       |  |    +-------+",
+                "         | +-------+  |    |        ",
+                " +-------+            |    |        ",
+                " |       |            |    +-------+",
+                " |       |            |            |",
+                " +-------+            |            |",
+                "         |            |            |",
+                "    +----+---+--+-----+------------+",
+                "    |    |   |  |     |            |",
+                "    |    |   |  +-----+------------+",
+                "    |    |   |                     |",
+                "    +----+---+---------------------+",
+                "    |    |                         |",
+                "    |    | +----+                  |",
+                "+---+    | |    |     +------------+",
+                "|        | |    |     |             ",
+                "+--------+-+    +-----+             "});
         String shape2 = String.join("\n", new String[]
                 {
                         "   +----+-------+",
                         "   |    |       |",
                         "+--+    |   +---+",
                         "|       |   |",
-                        "+----+  +---+",
-                        "|    |  |   |",
-                        "|    +--+-+-+",
-                        "|         |",
-                        "+---------+"
+                        "+-++-+  +---+",
+                        "| || |  |   |",
+                        "| || +--+-+-+",
+                        "| ||      |",
+                        "+-++------+"
                 });
 
-
-        System.out.println(shape);
-        for (String str : process(shape)) {
-            System.out.println(str);
-        }
+        System.out.println(shape2);
+        System.out.println(Arrays.toString(process(shape2)));
     }
 
     public static String[] process(String shape) {
@@ -43,30 +52,57 @@ public class Main {
         for (int i = 0; i < matrix.length; i++) {
             matrix[i] = init[i].split("");
         }
-        int[] start = {0, 3};
 
-        DirectionHolder holder = new DirectionHolder(matrix, start);
-        while (true) {
-            holder.stepForward();
-            if (Arrays.equals(holder.getPoint(), start)){
-                break;
-            }
-            if (holder.canGoRight()){
-                holder.turnRight();
-            }else {
-                while (!holder.canGoForward()){
+        int[][] starts = findStarts(matrix);
+        List<String> res = new ArrayList<>();
+
+        for (int[] _start : starts) {
+            DirectionHolder holder = new DirectionHolder(matrix, _start);
+            while (true) {
+                holder.stepForward();
+                if (Arrays.equals(holder.getPoint(), _start)) {
+                    break;
+                }
+                if (holder.canGoRight()) {
                     holder.turnRight();
+                } else {
+                    while (!holder.canGoForward()) {
+                        holder.turnRight();
+                        if (holder.isPrevious()) {
+                            holder.turnRight();
+                        }
+                    }
+                }
+            }
+            res.add(holder.getFigure());
+        }
+//        Set<String> set = new HashSet<>(res);
+//        res.clear();
+//        res.addAll(set);
+        return res.toArray(new String[0]);
+    }
+
+    private static int[][] findStarts(String[][] matrix) {
+        List<int[]> list = new ArrayList<>();
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                if (matrix[i][j].equals("+") && new DirectionHolder(matrix, new int[]{i, j}).canGoForward()
+                        && new DirectionHolder(matrix, new int[]{i, j}).canGoRight()) {
+                    list.add(new int[]{i, j});
                 }
             }
         }
-        return null;
+//        return new int[][]{{0, 3},{4, 8},{4, 0},{4, 2},{0,8},{4,3}};
+        return list.toArray(new int[0][]);
     }
 }
 
 class DirectionHolder {
     private int index = 0;
     private int[] point;
+    private int[] prevPoint;
     private final String[][] matrix;
+    private final String[][] resMatrix;
     private final List<Function<int[], int[]>> list = List.of(
             (int[] arr) -> new int[]{arr[0], arr[1] + 1},
             (int[] arr) -> new int[]{arr[0] + 1, arr[1]},
@@ -78,6 +114,10 @@ class DirectionHolder {
 
     public DirectionHolder(String[][] matrix, int[] start) {
         this.matrix = matrix;
+        this.resMatrix = new String[matrix.length][matrix[0].length];
+        for (String[] strings : resMatrix) {
+            Arrays.fill(strings, " ");
+        }
         point = start;
         updateDirections();
     }
@@ -92,20 +132,37 @@ class DirectionHolder {
     }
 
     public void stepForward() {
+        prevPoint = point;
         point = currentDirection.apply(point);
         show();
     }
 
     public boolean canGoRight() {
         int[] checkPoint = rightDirection.apply(point);
-        String element = matrix[checkPoint[0]][checkPoint[1]];
-        return element.equals("-") || element.equals("|") || element.equals("+");
+        String element;
+        try {
+            element = matrix[checkPoint[0]][checkPoint[1]];
+            if (matrix[point[0]][point[1]].equals("+"))
+                return element.equals("-") || element.equals("|") || element.equals("+");
+            if (matrix[point[0]][point[1]].equals("-"))
+                return element.equals("|") || element.equals("+");
+            if (matrix[point[0]][point[1]].equals("|"))
+                return element.equals("-") || element.equals("+");
+            return true;
+        } catch (IndexOutOfBoundsException e) {
+            return false;
+        }
     }
 
     public boolean canGoForward() {
         int[] checkPoint = currentDirection.apply(point);
-        String element = matrix[checkPoint[0]][checkPoint[1]];
-        return element.equals("-") || element.equals("|") || element.equals("+");
+        String element;
+        try {
+            element = matrix[checkPoint[0]][checkPoint[1]];
+            return element.equals("-") || element.equals("|") || element.equals("+");
+        } catch (IndexOutOfBoundsException e) {
+            return false;
+        }
     }
 
     public void turnRight() {
@@ -113,11 +170,32 @@ class DirectionHolder {
         updateDirections();
     }
 
-    public void show(){
-        System.out.print(matrix[point[0]][point[1]]);
+    public void show() {
+        resMatrix[point[0]][point[1]] = matrix[point[0]][point[1]];
     }
 
     public int[] getPoint() {
         return point;
+    }
+
+    public boolean isPrevious() {
+        int[] checkPoint = currentDirection.apply(point);
+        return Arrays.equals(checkPoint, prevPoint);
+    }
+
+    public String getFigure() {
+        StringBuilder res = new StringBuilder();
+        for (String[] strings : resMatrix) {
+            StringBuilder chars = new StringBuilder();
+            for (String string : strings) {
+                chars.append(string);
+            }
+            String str = chars.toString().replaceAll(" *$", "");
+            res.append(str);
+            if (!str.matches(" *")){
+                res.append("\n");
+            }
+        }
+        return res.toString();
     }
 }
