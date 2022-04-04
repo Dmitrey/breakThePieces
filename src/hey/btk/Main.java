@@ -2,11 +2,13 @@ package hey.btk;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
 
     public static void main(String[] args) {
-        String shape = String.join("\n", new String[] {
+        String shape = String.join("\n", new String[]{
                 "         +------------+--+      +--+",
                 "         |            |  |      |  |",
                 "         | +-------+  |  |      |  |",
@@ -65,20 +67,30 @@ public class Main {
                 }
                 if (holder.canGoRight()) {
                     holder.turnRight();
+                    holder.rightCount++;
                 } else {
+                    int i = 0;
                     while (!holder.canGoForward()) {
+                        i++;
                         holder.turnRight();
                         if (holder.isPrevious()) {
                             holder.turnRight();
+                            i++;
+                        }
+                        if (i == 3) {
+                            holder.leftCount++;
                         }
                     }
                 }
             }
-            res.add(holder.getFigure());
+            if (holder.rightCount > holder.leftCount) {
+                res.add(holder.getFigure());
+            }
+
         }
-//        Set<String> set = new HashSet<>(res);
-//        res.clear();
-//        res.addAll(set);
+        Set<String> set = new HashSet<>(res);
+        res.clear();
+        res.addAll(set);
         return res.toArray(new String[0]);
     }
 
@@ -103,6 +115,8 @@ class DirectionHolder {
     private int[] prevPoint;
     private final String[][] matrix;
     private final String[][] resMatrix;
+    public int leftCount;
+    public int rightCount;
     private final List<Function<int[], int[]>> list = List.of(
             (int[] arr) -> new int[]{arr[0], arr[1] + 1},
             (int[] arr) -> new int[]{arr[0] + 1, arr[1]},
@@ -185,17 +199,51 @@ class DirectionHolder {
 
     public String getFigure() {
         StringBuilder res = new StringBuilder();
+        List<Integer> spacesList = new ArrayList<>();
+
+
+        for (String[] strings : resMatrix) {
+            int spaces = 0;
+            for (String string : strings) {
+                if (string.equals(" ")) {
+                    spaces++;
+                } else {
+                    spacesList.add(spaces);
+                    break;
+                }
+            }
+        }
+
+        Optional<Integer> minOp = spacesList.stream().min(Comparator.naturalOrder());
+        int min = minOp.get();
+        String mask = "^ {" + min + "}";
         for (String[] strings : resMatrix) {
             StringBuilder chars = new StringBuilder();
             for (String string : strings) {
                 chars.append(string);
             }
             String str = chars.toString().replaceAll(" *$", "");
+            str = str.replaceAll(mask, "");
             res.append(str);
-            if (!str.matches(" *")){
+            if (!str.matches(" *")) {
                 res.append("\n");
             }
         }
-        return res.toString();
+
+        String resultFigure = res.toString();
+//        resultFigure = resultFigure.replaceAll("-+\\++-+","---");
+        Pattern pattern = Pattern.compile("-+\\++-+");
+        Matcher matcher = pattern.matcher(resultFigure);
+        if (matcher.find()) {
+            int length = matcher.group().length();
+            StringBuilder replacement = new StringBuilder();
+            for (int i = 0; i < length; i++) {
+                replacement.append("-");
+            }
+            resultFigure = resultFigure.replace(matcher.group(), replacement);
+        }
+
+
+        return resultFigure;
     }
 }
