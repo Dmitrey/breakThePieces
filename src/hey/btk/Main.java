@@ -4,21 +4,20 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Main {
 
     public static void main(String[] args) {
         String shape = String.join("\n", new String[]{
-                "+---+------------+---+",
-                "|   |            |   |",
-                "+---+------------+---+",
-                "|   |            |   |",
-                "|   |            |   |",
-                "|   |            |   |",
-                "|   |            |   |",
-                "+---+------------+---+",
-                "|   |            |   |",
-                "+---+------------+---+"});
+                "+-------------------+--+",
+                "|                   |  |",
+                "|                   |  |",
+                "|  +----------------+  |",
+                "|  |                   |",
+                "|  |                   |",
+                "+--+-------------------+"});
 
         System.out.println(shape);
         String[] process = process(shape);
@@ -33,7 +32,7 @@ public class Main {
         }
 
         int[][] starts = findStarts(matrix);
-        List<String> res = new ArrayList<>();
+        List<Figure> res = new ArrayList<>();
 
         for (int[] _start : starts) {
             DirectionHolder holder = new DirectionHolder(matrix, _start);
@@ -61,14 +60,36 @@ public class Main {
                 }
             }
             if (holder.rightCount > holder.leftCount) {
-                res.add(holder.getFigure());
+                res.add(new Figure(holder.getFigure(),holder.getPointsList()));
             }
-
         }
-//        Set<String> set = new HashSet<>(res);
-//        res.clear();
-//        res.addAll(set);
-        return res.toArray(new String[0]);
+
+        res.forEach(f-> f.getPoints().sort((a,b) -> {
+            if (a[0] > b[0]){
+                return 1;
+            }
+            if (b[0] > a[0]){
+                return -1;
+            }
+            if (a[1] > b[1]){
+                return 1;
+            }
+            if (b[1] > a[1]){
+                return -1;
+            }
+            return 0;
+        }));
+
+        HashMap<Integer,Figure> map = new HashMap<>();
+        for (Figure figure:res) {
+            map.put(figure.hashCode(),figure);
+        }
+
+        List<String> list = new ArrayList<>();
+        for (Figure fig: map.values()) {
+            list.add(fig.getFigure());
+        }
+        return list.toArray(new String[0]);
     }
 
     private static int[][] findStarts(String[][] matrix) {
@@ -81,8 +102,37 @@ public class Main {
                 }
             }
         }
-//        return new int[][]{{0, 3},{4, 8},{4, 0},{4, 2},{0,8},{4,3}};
         return list.toArray(new int[0][]);
+    }
+}
+
+class Figure{
+    private String figure;
+    private List<int[]> points;
+    public Figure(String figure, List<int[]> points){
+        this.figure = figure;
+        this.points = points;
+    }
+
+    public List<int[]> getPoints() {
+        return points;
+    }
+
+    public void setPoints(List<int[]> points) {
+        this.points = points;
+    }
+
+    public String getFigure() {
+        return figure;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 1;
+        for (int[] arr:points) {
+            result+=arr[0]*100+arr[1]*10000;
+        }
+        return result;
     }
 }
 
@@ -94,6 +144,7 @@ class DirectionHolder {
     private final String[][] resMatrix;
     public int leftCount;
     public int rightCount;
+    private List<int[]> pointsList = new ArrayList<>();
     private final List<Function<int[], int[]>> list = List.of(
             (int[] arr) -> new int[]{arr[0], arr[1] + 1},
             (int[] arr) -> new int[]{arr[0] + 1, arr[1]},
@@ -125,6 +176,7 @@ class DirectionHolder {
     public void stepForward() {
         prevPoint = point;
         point = currentDirection.apply(point);
+        pointsList.add(point);
         show();
     }
 
@@ -169,6 +221,10 @@ class DirectionHolder {
         return point;
     }
 
+    public List<int[]> getPointsList() {
+        return pointsList;
+    }
+
     public boolean isPrevious() {
         int[] checkPoint = currentDirection.apply(point);
         return Arrays.equals(checkPoint, prevPoint);
@@ -207,15 +263,17 @@ class DirectionHolder {
         }
 
         String resultFigure = res.toString();
-        Pattern pattern = Pattern.compile("-+\\++-+");
-        Matcher matcher = pattern.matcher(resultFigure);
-        if (matcher.find()) {
-            int length = matcher.group().length();
-            StringBuilder replacement = new StringBuilder();
-            for (int i = 0; i < length; i++) {
-                replacement.append("-");
-            }
-            resultFigure = resultFigure.replace(matcher.group(), replacement);
+        Pattern pattern;
+        Matcher matcher;
+        while (true) {
+            pattern = Pattern.compile("-+\\++-+");
+            matcher = pattern.matcher(resultFigure);
+            if (matcher.find()) {
+                int length = matcher.group().length();
+                StringBuilder replacement = new StringBuilder();
+                replacement.append("-".repeat(length));
+                resultFigure = resultFigure.replace(matcher.group(), replacement);
+            }else break;
         }
         pattern = Pattern.compile("\\+\\+-+");
         matcher = pattern.matcher(resultFigure);
@@ -249,7 +307,7 @@ class DirectionHolder {
 
         pattern = Pattern.compile("\\|+\\++\\|");
         matcher = pattern.matcher(transpStr);
-        if (matcher.find()){
+        if (matcher.find()) {
             int length = matcher.group().length();
             StringBuilder replacement = new StringBuilder();
             for (int i = 0; i < length; i++) {
@@ -284,11 +342,12 @@ class DirectionHolder {
             for (String string : strings) {
                 chars.append(string);
             }
-            res.append(chars).append("\n");
+            String str = chars.toString().replaceAll(" *$", "");
+            res.append(str).append("\n");
 
         }
         String result = res.toString();
-        result = result.replaceAll("\n$","");
+        result = result.replaceAll("\n$", "");
         return result;
     }
 
