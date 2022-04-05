@@ -9,43 +9,20 @@ public class Main {
 
     public static void main(String[] args) {
         String shape = String.join("\n", new String[]{
-                "         +------------+--+      +--+",
-                "         |            |  |      |  |",
-                "         | +-------+  |  |      |  |",
-                "         | |       |  |  +------+  |",
-                "         | |       |  |            |",
-                "         | |       |  |    +-------+",
-                "         | +-------+  |    |        ",
-                " +-------+            |    |        ",
-                " |       |            |    +-------+",
-                " |       |            |            |",
-                " +-------+            |            |",
-                "         |            |            |",
-                "    +----+---+--+-----+------------+",
-                "    |    |   |  |     |            |",
-                "    |    |   |  +-----+------------+",
-                "    |    |   |                     |",
-                "    +----+---+---------------------+",
-                "    |    |                         |",
-                "    |    | +----+                  |",
-                "+---+    | |    |     +------------+",
-                "|        | |    |     |             ",
-                "+--------+-+    +-----+             "});
-        String shape2 = String.join("\n", new String[]
-                {
-                        "   +----+-------+",
-                        "   |    |       |",
-                        "+--+    |   +---+",
-                        "|       |   |",
-                        "+-++-+  +---+",
-                        "| || |  |   |",
-                        "| || +--+-+-+",
-                        "| ||      |",
-                        "+-++------+"
-                });
+                "+---+------------+---+",
+                "|   |            |   |",
+                "+---+------------+---+",
+                "|   |            |   |",
+                "|   |            |   |",
+                "|   |            |   |",
+                "|   |            |   |",
+                "+---+------------+---+",
+                "|   |            |   |",
+                "+---+------------+---+"});
 
-        System.out.println(shape2);
-        System.out.println(Arrays.toString(process(shape2)));
+        System.out.println(shape);
+        String[] process = process(shape);
+        Arrays.stream(process(shape)).forEach(System.out::println);
     }
 
     public static String[] process(String shape) {
@@ -88,9 +65,9 @@ public class Main {
             }
 
         }
-        Set<String> set = new HashSet<>(res);
-        res.clear();
-        res.addAll(set);
+//        Set<String> set = new HashSet<>(res);
+//        res.clear();
+//        res.addAll(set);
         return res.toArray(new String[0]);
     }
 
@@ -201,7 +178,6 @@ class DirectionHolder {
         StringBuilder res = new StringBuilder();
         List<Integer> spacesList = new ArrayList<>();
 
-
         for (String[] strings : resMatrix) {
             int spaces = 0;
             for (String string : strings) {
@@ -231,7 +207,6 @@ class DirectionHolder {
         }
 
         String resultFigure = res.toString();
-//        resultFigure = resultFigure.replaceAll("-+\\++-+","---");
         Pattern pattern = Pattern.compile("-+\\++-+");
         Matcher matcher = pattern.matcher(resultFigure);
         if (matcher.find()) {
@@ -242,8 +217,99 @@ class DirectionHolder {
             }
             resultFigure = resultFigure.replace(matcher.group(), replacement);
         }
+        pattern = Pattern.compile("\\+\\+-+");
+        matcher = pattern.matcher(resultFigure);
+        if (matcher.find()) {
+            int length = matcher.group().length();
+            StringBuilder replacement = new StringBuilder("+");
+            for (int i = 0; i < length - 1; i++) {
+                replacement.append("-");
+            }
+            resultFigure = resultFigure.replace(matcher.group(), replacement);
+        }
+        pattern = Pattern.compile("-+\\+\\+");
+        matcher = pattern.matcher(resultFigure);
+        if (matcher.find()) {
+            int length = matcher.group().length();
+            StringBuilder replacement = new StringBuilder();
+            for (int i = 0; i < length - 1; i++) {
+                replacement.append("-");
+            }
+            replacement.append("+");
+            resultFigure = resultFigure.replace(matcher.group(), replacement);
+        }
+
+//        System.out.println(resultFigure);
+        String[][] arr1 = stringToArray(resultFigure);
+//        printArray(arr1);
+        String[][] transpone = transpone(arr1);
+//        printArray(transpone);
+        String transpStr = arrayToString(transpone);
+//        System.out.println(transpStr);
+
+        pattern = Pattern.compile("\\|+\\++\\|");
+        matcher = pattern.matcher(transpStr);
+        if (matcher.find()){
+            int length = matcher.group().length();
+            StringBuilder replacement = new StringBuilder();
+            for (int i = 0; i < length; i++) {
+                replacement.append("|");
+            }
+            transpStr = transpStr.replace(matcher.group(), replacement);
+        }
 
 
+        transpone = stringToArray(transpStr);
+//        printArray(transpone);
+        arr1 = transpone(transpone);
+//        printArray(arr1);
+        resultFigure = arrayToString(arr1);
+//        System.out.println(resultFigure);
         return resultFigure;
+    }
+
+    public static String[][] stringToArray(String str) {
+        String[] arr = str.split("\n");
+        String[][] matrix = new String[arr.length][];
+        for (int i = 0; i < arr.length; i++) {
+            matrix[i] = arr[i].split("");
+        }
+        return matrix;
+    }
+
+    public static String arrayToString(String[][] arr) {
+        StringBuilder res = new StringBuilder();
+        for (String[] strings : arr) {
+            StringBuilder chars = new StringBuilder();
+            for (String string : strings) {
+                chars.append(string);
+            }
+            res.append(chars).append("\n");
+
+        }
+        String result = res.toString();
+        result = result.replaceAll("\n$","");
+        return result;
+    }
+
+    public static String[][] transpone(String[][] matrix) {
+        Optional<String[]> maxOp = Arrays.stream(matrix).max((arr1, arr2) -> Integer.compare(arr1.length, arr2.length));
+        int max = maxOp.get().length;
+        String[][] transp = new String[max][matrix.length];
+        for (String[] s : transp) {
+            Arrays.fill(s, " ");
+        }
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                transp[j][i] = matrix[i][j];
+            }
+        }
+        return transp;
+    }
+
+    public static void printArray(String[][] arr) {
+        for (String[] a : arr) {
+            System.out.println(Arrays.toString(a));
+        }
     }
 }
